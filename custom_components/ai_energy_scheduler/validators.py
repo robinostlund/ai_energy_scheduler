@@ -1,13 +1,18 @@
-"""JSON Schema validator for AI Energy Scheduler."""
-import jsonschema
+"""Schedule validators for AI Energy Scheduler."""
+
 import json
+from jsonschema import validate, ValidationError
 import os
 
-def validate_schedule_json(data, hass):
-    """Validate schedule data against schema.json."""
-    import_path = os.path.join(
-        hass.config.path("custom_components/ai_energy_scheduler"), "schema.json"
-    )
-    with open(import_path, "r") as f:
+SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "schema.json")
+
+def validate_schedule(schedule: dict):
+    """Validate schedule against schema.json."""
+    import jsonschema
+
+    with open(SCHEMA_PATH, encoding="utf-8") as f:
         schema = json.load(f)
-    jsonschema.validate(instance=data, schema=schema)
+    try:
+        jsonschema.validate(instance=schedule, schema=schema)
+    except ValidationError as err:
+        raise ValueError(f"Schedule does not match schema: {err.message}")

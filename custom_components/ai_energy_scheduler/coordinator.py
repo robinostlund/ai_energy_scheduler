@@ -1,39 +1,58 @@
 """Coordinator for AI Energy Scheduler."""
-import json
-import os
-import hashlib
-from .const import SCHEDULE_FILE_PREFIX
 
-def _schema_hash(data):
-    """Generate a hash of the schedule dict."""
-    return hashlib.sha256(json.dumps(data, sort_keys=True).encode("utf-8")).hexdigest()
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.storage import Store
+from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION
+from .validators import validate_schedule
+import logging
 
-class AiEnergySchedulerCoordinator:
-    """Manages per-instance state, schedule cache, hash, and friendly name."""
+_LOGGER = logging.getLogger(__name__)
 
-    def __init__(self, hass, instance_id, instance_friendly_name):
-        self.hass = hass
-        self.instance_id = instance_id
-        self.instance_friendly_name = instance_friendly_name
-        self.schedule = {}
+class AIESDataCoordinator(DataUpdateCoordinator):
+    """Data coordinator for AI Energy Scheduler."""
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry):
+        """Initialize."""
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_interval=None,  # Manual update only on schedule import
+        )
+        self.entry = entry
+        self.schedule = None
+        self._store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self.alert = False
-        self._schema_hash = None
 
-    def load_schedule(self):
-        """Load the schedule from file (per instance)."""
-        path = self.hass.config.path(f"{SCHEDULE_FILE_PREFIX}{self.instance_id}.json")
-        if os.path.exists(path):
-            with open(path, "r") as f:
-                self.schedule = json.load(f)
-        else:
-            self.schedule = {}
-        self._schema_hash = _schema_hash(self.schedule)
+    async def async_init(self):
+        """Restore schedule from cache."""
+        cached = await self._store.async_load()
+        if cached:
+            try:
+                validate_schedule(cached)
+                self.schedule = cached
+                _LOGGER.info("Loaded schedule from cache.")
+            except Exception as err:
+                _LOGGER.error("Cached schedule invalid: %s", err)
+                self.alert = True
 
-    def save_schedule(self):
-        """Save the schedule to file (per instance)."""
-        path = self.hass.config.path(f"{SCHEDULE_FILE_PREFIX}{self.instance_id}.json")
-        with open(path, "w") as f:
-            json.dump(self.schedule, f, indent=2)
+    async def async_import_schedule(self, schedule: dict):
+        """Import and validate new schedule."""
+        try:
+            validate_schedule(schedule)
+            self.schedule = schedule
+            await self._store.async_save(schedule)
+            self.alert = False
+            await self.async_request_refresh()
+            _LOGGER.info("Schedule imported and validated.")
+        except Exception as err:
+            self.alert = True
+            _LOGGER.error("Failed to import schedule: %s", err)
+            raise
 
-    def schema_hash(self):
-        return self._schema_hash
+    async def async_cleanup_removed(self):
+        """Cleanup entities/devices not in current schedule."""
+        # This is a stub; actual entity removal is managed in setup/unload.
+        pass

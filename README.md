@@ -1,46 +1,59 @@
 # AI Energy Scheduler
 
-AI-driven energy scheduling for Home Assistant, supporting multiple buildings or zones with unique instance identifiers and friendly names.
+[![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg?style=flat-square)](https://hacs.xyz/)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/robinostlund/ai_energy_scheduler/test_and_validate.yaml?branch=main)](https://github.com/robinostlund/ai_energy_scheduler/actions)
+
+**AI-driven energy scheduling for Home Assistant.**  
+Import a JSON schedule for your devices (heat pump, battery, EV, etc.), visualize and automate, all powered by AI or manual plans.
+
+---
 
 ## Features
 
-- JSON-based scheduling per device
-- Support for multiple instances (`instance_id`, `instance_friendly_name`)
-- Per-device sensors and calendars (with clear prefix)
-- Total and summary sensors
-- Manual import of schedule via service (not config flow)
-- Schema validation and error reporting
-- Full HACS support
-- Automatic Home Assistant events for all status changes
+- **JSON-based scheduling:** Plan your devices per interval, including command, power (kW), energy (kWh), and source (ai/manual).
+- **Automatic entities:** Sensors, binary sensors, calendars, and buttons for every device.
+- **Summary sensors:** Total power (kW), total energy (kWh) for today, last update.
+- **Calendar integration:** Each device gets its own calendar, visible and overrideable.
+- **Event support:** Emits `ai_energy_scheduler_command_activated` every time a new command is activated (perfect for automations).
+- **Error indication:** Binary sensor alerts you if your schedule fails validation or parsing.
+- **HACS compatible:** Easy to install and update.
+- **Full logging:** English log output, clear error messages.
+- **UI config flow:** Add/remove the integration via the Home Assistant UI, with preview of entities.
 
-## Installation
+---
 
-1. Copy `ai_energy_scheduler` into your `custom_components` directory.
-2. Restart Home Assistant.
-3. Use the `ai_energy_scheduler.import_schedule` service to import your JSON schedule for each instance/building.
-4. Use entities such as `sensor.ai_energy_scheduler_<instance_id>_<device>_command` in your dashboards.
+## Example JSON Schema
 
-## Example service call
-
-```yaml
-service: ai_energy_scheduler.import_schedule
-data:
-  instance_id: mainhouse
-  instance_friendly_name: "Main House"
-  schedule: >
-    {
-      "schedules": {
-        "heat_pump": {
-          "intervals": [
-            {
-              "start": "2025-06-02T00:00:00+02:00",
-              "end": "2025-06-02T01:00:00+02:00",
-              "command": "heat",
-              "power_kw": 1.2,
-              "energy_kwh": 1.2,
-              "source": "ai"
-            }
-          ]
+```json
+{
+  "schedules": {
+    "heat_pump": {
+      "intervals": [
+        {
+          "start": "2025-06-02T00:00:00+02:00",
+          "end": "2025-06-02T06:00:00+02:00",
+          "command": "off",
+          "power_kw": 0,
+          "energy_kwh": 0,
+          "source": "ai"
+        },
+        {
+          "start": "2025-06-02T06:00:00+02:00",
+          "end": "2025-06-02T22:00:00+02:00",
+          "command": "heat",
+          "power_kw": 2.5,
+          "energy_kwh": 40,
+          "source": "ai"
+        },
+        {
+          "start": "2025-06-02T22:00:00+02:00",
+          "end": "2025-06-03T00:00:00+02:00",
+          "command": "standby",
+          "power_kw": 0.3,
+          "energy_kwh": 0.6,
+          "source": "manual"
         }
-      }
+      ]
     }
+  }
+}

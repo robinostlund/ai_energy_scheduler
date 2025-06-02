@@ -1,25 +1,20 @@
-"""Binary sensor for AI Energy Scheduler alert."""
+"""Binary sensors for AI Energy Scheduler."""
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
-from .const import DOMAIN, BINARY_SENSOR_ALERT
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from .const import DOMAIN, SENSOR_ALERT
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Not used: entities created by service."""
-    pass
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities([AIESAlertSensor(coordinator)])
 
-def create_alert_binary_sensor_for_instance(hass, instance_id, instance_friendly_name, alert_state):
-    return [AiEnergyAlertBinarySensor(instance_id, instance_friendly_name, alert_state)]
-
-class AiEnergyAlertBinarySensor(BinarySensorEntity):
-    """Binary sensor for schedule validation errors."""
-
-    def __init__(self, instance_id, instance_friendly_name, alert_state):
-        self._instance_id = instance_id
-        self._instance_friendly_name = instance_friendly_name
-        self._attr_name = f"{DOMAIN} {instance_friendly_name} Alert"
-        self._attr_unique_id = f"{DOMAIN}_{instance_id}_{BINARY_SENSOR_ALERT}"
-        self._alert_state = alert_state
+class AIESAlertSensor(CoordinatorEntity, BinarySensorEntity):
+    """Binary sensor for schedule processing errors."""
 
     @property
     def is_on(self):
-        return self._alert_state
+        return self.coordinator.alert
+
+    @property
+    def name(self):
+        return f"{DOMAIN}_{SENSOR_ALERT}"

@@ -1,24 +1,19 @@
+"""Button for manual schedule refresh."""
+
 from homeassistant.components.button import ButtonEntity
-from homeassistant.core import callback
-from .const import DOMAIN, BUTTON_CLEANUP
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from .const import DOMAIN
 
-class CleanupRemovedButton(ButtonEntity):
-    """Button to cleanup removed devices."""
+async def async_setup_entry(hass, entry, async_add_entities):
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities([AIESRefreshButton(coordinator)])
 
-    def __init__(self, hass, instance_id, instance_friendly_name):
-        self._hass = hass
-        self._instance_id = instance_id
-        self._instance_friendly_name = instance_friendly_name
-        self._attr_name = f"{DOMAIN} {instance_friendly_name} Cleanup Removed Devices"
-        self._attr_unique_id = f"{DOMAIN}_{instance_id}_{BUTTON_CLEANUP}"
+class AIESRefreshButton(CoordinatorEntity, ButtonEntity):
+    """Button to refresh the schedule."""
 
-    async def async_press(self):
-        """Call the cleanup_removed service for this instance."""
-        await self._hass.services.async_call(
-            DOMAIN,
-            "cleanup_removed",
-            {
-                "instance_id": self._instance_id,
-            },
-            blocking=True,
-        )
+    @property
+    def name(self):
+        return f"{DOMAIN}_refresh"
+
+    async def async_press(self) -> None:
+        await self.coordinator.async_request_refresh()

@@ -1,45 +1,13 @@
 import_schedule:
-  name: Import Schedule
-  description: Import a new schedule for an instance (building/zone).
+  name: Import AI Schedule
+  description: Import or update the AI-generated schedule for devices.
   fields:
-    instance_id:
-      description: A unique instance id (e.g. "mainhouse", "garage")
-      example: mainhouse
-    instance_friendly_name:
-      description: Friendly name (e.g. "Main House"). Used for display.
-      example: Main House
-    schedule:
-      description: Schedule as JSON string (must match schema).
-      example: |
-        {
-          "schedules": {
-            "heat_pump": {
-              "intervals": [
-                {
-                  "start": "2025-06-02T00:00:00+02:00",
-                  "end": "2025-06-02T01:00:00+02:00",
-                  "command": "heat",
-                  "power_kw": 1.2,
-                  "energy_kwh": 1.2,
-                  "source": "ai"
-                }
-              ]
-            }
-          }
-        }
-
-validate_schedule:
-  name: Validate Schedule
-  description: Validate the current AI Energy Scheduler JSON for an instance.
-  fields:
-    instance_id:
-      description: Instance id (must match imported schedule)
-      example: mainhouse
+    schedule_json:
+      name: Schedule JSON
+      description: The JSON schedule, validated against schema.json
+      required: true
+      example: "{...}"
 
 cleanup_removed:
   name: Cleanup Removed Devices
-  description: Remove entities and calendars for an instance no longer present in the schedule.
-  fields:
-    instance_id:
-      description: Instance id (must match imported schedule)
-      example: mainhouse
+  description: Remove all entities and calendars for devices no longer present in the schedule.

@@ -1,10 +1,21 @@
 {
+    "title": "AI Energy Scheduler",
     "config": {
         "step": {
             "user": {
                 "title": "AI Energy Scheduler Setup",
-                "description": "Paste your schedule JSON here."
+                "description": "Import your AI-generated energy schedule as JSON."
             }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "total_power_kw": "Total Power (kW)",
+            "total_energy_kwh_today": "Total Energy (kWh) Today",
+            "last_update": "Last Update"
+        },
+        "binary_sensor": {
+            "alert": "Schedule Error"
         }
     }
 }
