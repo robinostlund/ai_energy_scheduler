@@ -1,0 +1,6 @@
+DOMAIN = "ai_energy_scheduler"
+SENSOR_COMMAND = "command"
+SENSOR_POWER_KW = "power_kw"
+SENSOR_ENERGY_KWH = "energy_kwh"
+SENSOR_NEXT_COMMAND = "next_command"
+EVENT_COMMAND_ACTIVATED = f"{DOMAIN}_command_activated"

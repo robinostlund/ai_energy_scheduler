@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AI Energy Scheduler Schema",
+  "type": "object",
+  "properties": {
+    "schedules": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-zA-Z0-9_]+$": {
+          "type": "object",
+          "properties": {
+            "intervals": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "start": { "type": "string", "format": "date-time" },
+                  "end": { "type": "string", "format": "date-time" },
+                  "command": { "type": "string" },
+                  "power_kw": { "type": "number" },
+                  "energy_kwh": { "type": "number" },
+                  "source": { "type": "string", "enum": ["ai", "manual"] }
+                },
+                "required": ["start", "end", "command"]
+              }
+            }
+          },
+          "required": ["intervals"]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["schedules"],
+  "additionalProperties": false
+}

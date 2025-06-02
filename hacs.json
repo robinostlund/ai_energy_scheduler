@@ -1,9 +1,7 @@
 {
-    "name": "AI Energy Scheduler",
-    "content_in_root": false,
-    "domain": "ai_energy_scheduler",
-    "country": "US",
-    "zip_release": false,
-    "render_readme": true,
-    "homeassistant": "2025.5.0"
+  "name": "AI Energy Scheduler",
+  "content_in_root": false,
+  "domains": ["ai_energy_scheduler"],
+  "country": "SE",
+  "homeassistant": "2025.0.0"
 }

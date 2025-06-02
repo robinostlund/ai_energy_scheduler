@@ -1,0 +1,15 @@
+submit_schedule:
+  description: "Submit a new energy schedule via JSON"
+  fields:
+    json:
+      description: "The full schedule as JSON"
+      example: '{"schedules": {"heat_pump": {"intervals": [...]}}}'
+
+validate_schedule:
+  description: "Validate a given JSON schedule"
+  fields:
+    json:
+      description: "The schedule to validate"
+
+cleanup_removed:
+  description: "Cleanup entities that are no longer defined in schedule"

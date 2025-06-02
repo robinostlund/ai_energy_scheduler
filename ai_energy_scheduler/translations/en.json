@@ -1,0 +1,9 @@
+{
+  "title": "AI Energy Scheduler",
+  "description": "Configure your AI-based energy schedules.",
+  "submit": "Submit",
+  "error": {
+    "invalid_json": "Invalid JSON format.",
+    "schema_validation": "JSON does not match the required schema."
+  }
+}

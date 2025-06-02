@@ -1,0 +1,10 @@
+{
+  "domain": "ai_energy_scheduler",
+  "name": "AI Energy Scheduler",
+  "version": "1.0.0",
+  "documentation": "https://github.com/robinostlund/ai_energy_scheduler",
+  "dependencies": [],
+  "codeowners": ["@robinostlund"],
+  "requirements": [],
+  "config_flow": true
+}
