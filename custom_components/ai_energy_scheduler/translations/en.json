@@ -1,0 +1,18 @@
+{
+  "state": {
+    "on": "On",
+    "off": "Off",
+    "unknown": "Unknown"
+  },
+  "entity": {
+    "device_command": "Command",
+    "device_power_kw": "Power (kW)",
+    "device_energy_kwh": "Energy (kWh)",
+    "device_next_command": "Next Command",
+    "total_power_kw": "Total Power (kW)",
+    "total_energy_kwh_today": "Total Energy Today (kWh)",
+    "last_update": "Last Update",
+    "alert": "Schedule Error"
+  }
+}
+
