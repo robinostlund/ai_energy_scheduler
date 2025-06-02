@@ -5,6 +5,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 from .const import DOMAIN
 from .coordinator import AIESDataCoordinator
+from .service import async_setup_services
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up from configuration.yaml (not used)."""
@@ -16,7 +17,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_init()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
-    await hass.config_entries.async_forward_entry_setups(entry, ["sensor", "calendar", "binary_sensor", "button"])
+    await async_setup_services(hass, coordinator)  # <-- DENNA RAD ÄR VIKTIG!
+
+    await hass.config_entries.async_forward_entry_setups(
+        entry, ["sensor", "calendar", "binary_sensor", "button"]
+    )
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

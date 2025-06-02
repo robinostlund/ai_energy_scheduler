@@ -1,34 +1,19 @@
-"""AI Energy Scheduler integration."""
+"""Config flow for AI Energy Scheduler."""
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.typing import ConfigType
-from .const import DOMAIN
-from .coordinator import AIESDataCoordinator
-from .service import async_setup_services
+from homeassistant import config_entries
+from homeassistant.core import callback
+from .const import DOMAIN, DEFAULT_NAME
 
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up from configuration.yaml (not used)."""
-    return True
+class AIESSchedulerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Config flow."""
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up AI Energy Scheduler from a config entry."""
-    coordinator = AIESDataCoordinator(hass, entry)
-    await coordinator.async_init()
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    async def async_step_user(self, user_input=None):
+        if user_input is not None:
+            # For now, no options – integration is added
+            return self.async_create_entry(title=DEFAULT_NAME, data={})
 
-    await async_setup_services(hass, coordinator)  # <-- DENNA RAD ÄR VIKTIG!
-
-    await hass.config_entries.async_forward_entry_setups(
-        entry, ["sensor", "calendar", "binary_sensor", "button"]
-    )
-    return True
-
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry."""
-    await hass.config_entries.async_forward_entry_unload(entry, "sensor")
-    await hass.config_entries.async_forward_entry_unload(entry, "calendar")
-    await hass.config_entries.async_forward_entry_unload(entry, "binary_sensor")
-    await hass.config_entries.async_forward_entry_unload(entry, "button")
-    hass.data[DOMAIN].pop(entry.entry_id)
-    return True
+        return self.async_show_form(
+            step_id="user",
+            data_schema=None,
+            description_placeholders={"name": DEFAULT_NAME},
+        )
