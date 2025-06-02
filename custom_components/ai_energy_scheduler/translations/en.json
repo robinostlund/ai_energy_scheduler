@@ -1,15 +1,14 @@
 {
   "config": {
-    "title": "AI Energy Scheduler",
     "step": {
       "user": {
-        "title": "Configure Scheduler",
-        "description": "Paste JSON schedule to import"
+        "title": "AI Energy Scheduler Setup",
+        "description": "Enter a name for this schedule and optionally paste the JSON definition.",
+        "data": {
+          "name": "Name",
+          "schedule_json": "Schedule JSON (optional)"
+        }
       }
-    },
-    "error": {
-      "invalid_json": "Invalid JSON format",
-      "schema_validation_failed": "Schedule validation failed"
     }
   },
   "entity": {
@@ -37,6 +36,16 @@
   "device_automation": {
     "trigger_type": {
       "command_activated": "Command activated"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "manual_schedule_override": "Allow manual calendar overrides"
+        }
+      }
     }
   }
 }
