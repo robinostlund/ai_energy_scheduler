@@ -4,15 +4,16 @@ set_schedule:
   fields:
     schedule_data:
       description: JSON schedule data
-      example: |
-        {
-          "schedules": {
-            "heat_pump": {
-              "intervals": [...]
-            }
-          }
-        }
-
+      example: "{\n  \"schedules\": {\n    \"heat_pump\": {\n      \"intervals\":\
+        \ [...]\n    }\n  }\n}\n"
 cleanup_entities:
   name: Cleanup Entities
   description: Removes unavailable sensors and stale calendars
+validate_schedule:
+  name: Validate Schedule JSON
+  description: Validate input JSON without updating sensors.
+  fields:
+    schedule_data:
+      description: The full JSON schedule definition
+      example: '{"schedules": {"heat_pump": {"intervals": [{"start": "2025-06-02T00:00:00+02:00","end":
+        "2025-06-02T01:00:00+02:00","command": "heat"}]}}}'

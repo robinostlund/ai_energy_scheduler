@@ -81,3 +81,30 @@ You can add this custom integration to Home Assistant via [HACS](https://hacs.xy
 6. Restart Home Assistant
 
 Make sure `ai_energy_scheduler` appears in your `custom_components/` directory after install.
+### 🧪 Validate Schedule JSON
+
+You can validate a JSON schedule before applying it using this service:
+
+```yaml
+service: ai_energy_scheduler.validate_schedule
+data:
+  schedule_data: >
+    {
+      "schedules": {
+        "heat_pump": {
+          "intervals": [
+            {
+              "start": "2025-06-02T00:00:00+02:00",
+              "end": "2025-06-02T01:00:00+02:00",
+              "command": "heat",
+              "power_kw": 2.0,
+              "energy_kwh": 1.5,
+              "source": "ai"
+            }
+          ]
+        }
+      }
+    }
+```
+
+This will trigger a validation without updating any entities. If the schedule is valid, a persistent notification will confirm it.

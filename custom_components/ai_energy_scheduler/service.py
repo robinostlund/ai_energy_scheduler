@@ -21,3 +21,26 @@ async def async_register_services(hass: HomeAssistant, coordinator: AiEnergySche
 
     hass.services.async_register(DOMAIN, "set_schedule", handle_set_schedule)
     hass.services.async_register(DOMAIN, "cleanup_entities", handle_cleanup)
+
+import json
+import jsonschema
+from .validators import SCHEDULE_SCHEMA
+
+async def async_validate_schedule_service(hass: HomeAssistant, call: ServiceCall):
+    """Service to validate JSON input against the schema."""
+    data = call.data.get("schedule_data")
+    try:
+        if isinstance(data, str):
+            data = json.loads(data)
+        jsonschema.validate(instance=data, schema=SCHEDULE_SCHEMA)
+        _LOGGER.info("AI Energy Scheduler: Schedule JSON is valid.")
+        hass.components.persistent_notification.create(
+            "✅ Schedule JSON is valid.",
+            title="AI Energy Scheduler"
+        )
+    except (json.JSONDecodeError, jsonschema.ValidationError) as err:
+        _LOGGER.error("Schedule JSON is invalid: %s", err)
+        hass.components.persistent_notification.create(
+            f"❌ Invalid Schedule JSON:\n{err}",
+            title="AI Energy Scheduler"
+        )
