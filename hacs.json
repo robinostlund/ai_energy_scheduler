@@ -13,7 +13,7 @@
   "format": "json",
   "render_readme": true,
   "changelog": "",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "slug": "ai_energy_scheduler",
   "url": "https://github.com/robinostlund/ai_energy_scheduler",
   "startup": "before_dependencies",
