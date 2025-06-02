@@ -2,6 +2,7 @@
   "domain": "ai_energy_scheduler",
   "name": "AI Energy Scheduler",
   "documentation": "https://github.com/robinostlund/ai_energy_scheduler",
+  "issue_tracker": "https://github.com/robinostlund/ai_energy_scheduler/issues",
   "integration_type": "hub",
   "requirements": [
     "jsonschema==4.24.0"
@@ -12,5 +13,6 @@
   ],
   "homeassistant": "2025.5.0",
   "iot_class": "local_push",
-  "config_flow": true
+  "config_flow": true,
+  "version": "v0.0.1"
 }
