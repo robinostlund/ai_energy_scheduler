@@ -2,50 +2,65 @@
   "config": {
     "step": {
       "user": {
-        "title": "AI Energy Scheduler Setup",
-        "description": "Enter a name for this schedule and optionally paste the JSON definition.",
+        "title": "Configure AI Energy Scheduler",
+        "description": "Name this schedule instance.",
         "data": {
-          "name": "Name",
-          "schedule_json": "Schedule JSON (optional)"
+          "name": "Name"
+        }
+      }
+    },
+    "error": {
+      "invalid_json": "The provided JSON could not be validated.",
+      "already_configured": "An instance with this name already exists."
+    },
+    "abort": {
+      "already_configured": "This instance is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Update Schedule JSON",
+        "description": "Paste your schedule in JSON format to update the configuration.",
+        "data": {
+          "json_data": "Schedule JSON"
         }
       }
     }
   },
   "entity": {
     "sensor": {
-      "ai_energy_scheduler_last_update": {
-        "name": "Last Schedule Update",
-        "state": "Last update time"
-      },
-      "ai_energy_scheduler_total_power_kw": {
+      "total_power_kw": {
         "name": "Total Power (kW)",
         "state": "Current total power"
       },
-      "ai_energy_scheduler_total_energy_kwh": {
+      "total_energy_kwh_today": {
         "name": "Total Energy Today (kWh)",
-        "state": "Estimated total energy"
+        "state": "Estimated daily consumption"
       }
     },
     "binary_sensor": {
-      "ai_energy_scheduler_alert": {
-        "name": "Scheduler Alert",
-        "state": "JSON input failed"
+      "alert": {
+        "name": "Schedule Alert",
+        "state": {
+          "on": "Invalid schedule",
+          "off": "Schedule OK"
+        }
+      }
+    },
+    "button": {
+      "cleanup": {
+        "name": "Cleanup Removed Devices",
+        "press": {
+          "success": "Cleanup completed",
+          "error": "Failed to complete cleanup"
+        }
       }
     }
   },
   "device_automation": {
     "trigger_type": {
-      "command_activated": "Command activated"
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Options",
-        "data": {
-          "manual_schedule_override": "Allow manual calendar overrides"
-        }
-      }
+      "command_activated": "Command activated for device"
     }
   }
 }

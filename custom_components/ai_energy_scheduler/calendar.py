@@ -1,51 +1,85 @@
-"""Calendar platform for AI Energy Scheduler"""
+from __future__ import annotations
 
-from homeassistant.components.calendar import CalendarEntity, CalendarEvent
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
+import logging
 from datetime import datetime, timedelta
-import voluptuous as vol
+from typing import Optional, List
 
-DOMAIN = "ai_energy_scheduler"
-PLATFORMS = ["calendar"]
+from homeassistant.components.calendar import (
+    CalendarEntity,
+    CalendarEvent,
+)
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 
-async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities: AddEntitiesCallback) -> None:
-    data = hass.data[DOMAIN][config_entry.entry_id]
-    schedules = data.get("schedules", {})
+from .const import DOMAIN
+from .coordinator import AiEnergySchedulerCoordinator
+
+_LOGGER = logging.getLogger(__name__)
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities,
+) -> None:
+    """Set up AI Energy Scheduler calendars."""
+    coordinator: AiEnergySchedulerCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+
     entities = []
-
-    for device, info in schedules.items():
-        name = f"{device.replace('_', ' ').title()} Schedule"
-        entity = AIEnergySchedulerCalendar(device, name, info.get("intervals", []))
-        entities.append(entity)
+    for device_id in coordinator.schedule_data.keys():
+        entities.append(SchedulerCalendarEntity(coordinator, device_id))
 
     async_add_entities(entities, update_before_add=True)
 
 
-class AIEnergySchedulerCalendar(CalendarEntity):
-    def __init__(self, device: str, name: str, intervals: list) -> None:
-        self._attr_name = name
-        self._device = device
-        self._intervals = intervals
-        self._event = None
-        self._attr_unique_id = f"ai_energy_scheduler_{device}_calendar"
+class SchedulerCalendarEntity(CalendarEntity):
+    """Calendar entity to represent scheduled command intervals."""
+
+    def __init__(self, coordinator: AiEnergySchedulerCoordinator, device_id: str) -> None:
+        self._coordinator = coordinator
+        self._device_id = device_id
+        self._attr_name = f"{device_id} Schedule"
+        self._attr_unique_id = f"{DOMAIN}_{device_id}_calendar"
+        self._events: List[CalendarEvent] = []
+
+    async def async_get_events(
+        self,
+        hass: HomeAssistant,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> list[CalendarEvent]:
+        """Return calendar events (commands) for the specified time range."""
+        events = []
+        device_schedule = self._coordinator.schedule_data.get(self._device_id, {}).get("schedule", [])
+
+        for item in device_schedule:
+            try:
+                start = datetime.fromisoformat(item["start"])
+                end = datetime.fromisoformat(item["end"])
+                if start < end_date and end > start_date:
+                    events.append(
+                        CalendarEvent(
+                            summary=item.get("command", "Unknown"),
+                            start=start,
+                            end=end,
+                        )
+                    )
+            except Exception as e:
+                _LOGGER.warning(f"Invalid schedule item for {self._device_id}: {e}")
+
+        return events
 
     @property
-    def event(self) -> CalendarEvent | None:
-        return self._event
+    def event(self) -> Optional[CalendarEvent]:
+        """Return the next upcoming event."""
+        now = datetime.now()
+        future_events = [
+            e for e in self._events if e.start >= now
+        ]
+        return min(future_events, default=None, key=lambda e: e.start)
 
     async def async_update(self) -> None:
-        now = datetime.now().astimezone()
-        for interval in self._intervals:
-            start = datetime.fromisoformat(interval["start"])
-            end = datetime.fromisoformat(interval["end"])
-            if start <= now < end:
-                self._event = CalendarEvent(
-                    summary=interval["command"],
-                    start=start,
-                    end=end,
-                    description=f"{interval['power_kw']} kW / {interval['energy_kwh']} kWh",
-                )
-                return
-        self._event = None
+        """Refresh the list of upcoming events."""
+        now = datetime.now()
+        future = now + timedelta(days=7)
+        self._events = await self.async_get_events(self._coordinator.hass, now, future)
