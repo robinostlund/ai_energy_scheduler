@@ -43,7 +43,8 @@
                   "start",
                   "end",
                   "command"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           },
@@ -61,4 +62,3 @@
   ],
   "additionalProperties": false
 }
-

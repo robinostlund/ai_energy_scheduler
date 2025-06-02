@@ -1,12 +1,15 @@
 """Storage and update coordinator for ai_energy_scheduler."""
 
-import asyncio
 import logging
+import json
+import os
 from typing import Any, Dict
 
+import jsonschema
 from homeassistant.core import HomeAssistant, callback, Event
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util.async_ import run_callback_threadsafe
 
 from .const import (
     DOMAIN,
@@ -14,11 +17,16 @@ from .const import (
     STORAGE_VERSION,
     EVENT_COMMAND_ACTIVATED,
     BINARY_ALERT,
-    ERROR_INVALID_SCHEMA,
+    SCHEMA_FILE,
 )
-from .services import validate_and_store_schedule
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _read_schema_file(schema_path: str) -> Dict[str, Any]:
+    """Blocking read of schema.json file."""
+    with open(schema_path, "r", encoding="utf-8") as file:
+        return json.load(file)
 
 
 class AIDataUpdateCoordinator(DataUpdateCoordinator):
@@ -28,75 +36,93 @@ class AIDataUpdateCoordinator(DataUpdateCoordinator):
         self, hass: HomeAssistant, store: Store, initial_data: dict[str, Any]
     ) -> None:
         """Initialize coordinator."""
+        _LOGGER.debug("Initializing AIDataUpdateCoordinator with initial_data: %s", initial_data)
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=None,  # Vi kör inte periodisk uppdatering, vi triggar manuellt.
+            update_interval=None,  # We trigger updates manually
         )
         self.store = store
         self.data: dict[str, Any] = initial_data or {}
-        # Början, inga fel:
         self._schema_valid = True
 
     async def _async_update_data(self) -> dict[str, Any]:
         """
-        Denna metod körs om någon triggat async_refresh().
-        Här kan vi validera schema och uppdatera self.data.
+        Called whenever Coordinator.refresh() is triggered.
+        Since validation already happened in async_update_schedule, simply return self.data.
         """
-        # Vi har redan kört validering i servicehanteraren, så om vi når hit
-        # antar vi att data är OK. Returnera bara det som finns i self.data.
+        _LOGGER.debug("_async_update_data returning current data: %s", self.data)
         return self.data
 
     async def async_update_schedule(self, new_data: dict[str, Any]) -> None:
         """
-        Tar emot nytt schema-data, validerar och sparar.
-        Om valideringen lyckas, uppdaterar vi self.data, sparar i Store
-        och avfyrar update-signaler.
-        Om valideringen misslyckas, sätter binär sensorn till alert.
+        Receive new schedule data, validate against JSON schema, and save.
+        If validation fails, set _schema_valid=False and raise UpdateFailed.
         """
+        _LOGGER.debug("async_update_schedule called with new_data: %s", new_data)
+
+        # Load schema in executor to avoid blocking event loop
+        schema_path = os.path.join(os.path.dirname(__file__), SCHEMA_FILE)
         try:
-            validated = validate_and_store_schedule(self.hass, new_data)
+            schema = await self.hass.async_add_executor_job(_read_schema_file, schema_path)
+            _LOGGER.debug("Schema loaded successfully from %s", schema_path)
         except Exception as err:
-            _LOGGER.error("Schedule validation failed: %s", err)
+            _LOGGER.error("Error loading schema.json: %s", err, exc_info=True)
             self._schema_valid = False
-            # När valideringen misslyckas, avfyrar vi ett fel-event för att binärsensorn ska sättas.
-            self.hass.bus.async_fire(f"{DOMAIN}_schedule_error", { "error": str(err) })
-            raise UpdateFailed(ERROR_INVALID_SCHEMA) from err
+            self.hass.bus.async_fire(f"{DOMAIN}_schedule_error", {"error": str(err)})
+            raise UpdateFailed(f"Could not load schema: {err}") from err
 
-        # Om validering lyckades, uppdatera intern data och spara
-        self.data = validated
-        await self.store.async_save(self.data)
+        # Validate schema
+        try:
+            jsonschema.validate(instance=new_data, schema=schema)
+            _LOGGER.debug("Schema validation passed")
+        except Exception as err:
+            _LOGGER.error("Schedule validation failed: %s", err, exc_info=True)
+            self._schema_valid = False
+            self.hass.bus.async_fire(f"{DOMAIN}_schedule_error", {"error": str(err)})
+            raise UpdateFailed(f"Invalid schedule: {err}") from err
+
+        # Validation succeeded
+        self.data = new_data
+        try:
+            await self.store.async_save(self.data)
+            _LOGGER.debug("Data saved to store successfully: %s", self.data)
+        except Exception as err:
+            _LOGGER.error("Error saving data to store: %s", err, exc_info=True)
+            # Not fatal; continue
+
         self._schema_valid = True
-
-        # Avfyra en intern update så alla entiteter kan plocka nytt läge
+        _LOGGER.debug("Triggering Coordinator update with new data")
         self.async_set_updated_data(self.data)
 
-        # Skicka ett event med hela datan (för ex. loggning eller automationer)
-        self.hass.bus.async_fire(f"{DOMAIN}_schedule_updated", { "data": self.data })
+        _LOGGER.debug("Firing schedule_updated event with data: %s", self.data)
+        self.hass.bus.async_fire(f"{DOMAIN}_schedule_updated", {"data": self.data})
 
     @callback
     async def handle_calendar_event(self, event: Event) -> None:
         """
-        Hanterar händelser från CalendarEntity (manuella ändringar).
-        Payload innehåller: device_id, intervals (helt nya intervalldata).
-        Vi uppdaterar vårt interna schema
+        Handle events from CalendarEntity (manual edits).
+        Payload contains: device_id, intervals (new intervals list).
+        Update the internal data and re-validate/save.
         """
+        _LOGGER.debug("handle_calendar_event called with event.data: %s", event.data)
         device_id = event.data.get("device_id")
         new_intervals = event.data.get("intervals")
         if not device_id or new_intervals is None:
+            _LOGGER.debug("Invalid calendar event payload: %s", event.data)
             return
 
-        # Bygg om data-delen för device_id
         schedules = self.data.get("schedules", {})
         if device_id not in schedules:
             _LOGGER.warning("Received calendar event for unknown device: %s", device_id)
             return
 
         schedules[device_id]["intervals"] = new_intervals
+        _LOGGER.debug("Updated intervals for device_id=%s to %s", device_id, new_intervals)
         try:
-            # Validera hela schemat innan vi sparar
+            _LOGGER.debug("Calling async_update_schedule after calendar event")
             await self.async_update_schedule(self.data)
+            _LOGGER.debug("async_update_schedule succeeded after calendar event")
         except UpdateFailed:
-            _LOGGER.error("Failed to update schedule after calendar edit for %s", device_id)
-
+            _LOGGER.error("Failed to update schedule after calendar edit for %s", device_id, exc_info=True)
