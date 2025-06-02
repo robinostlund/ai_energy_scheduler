@@ -1,0 +1,20 @@
+{
+  "domain": "ai_energy_scheduler",
+  "name": "AI Energy Scheduler",
+  "version": "0.1.0",
+  "documentation": "https://github.com/robinostlund/ai_energy_scheduler",
+  "issue_tracker": "https://github.com/robinostlund/ai_energy_scheduler/issues",
+  "codeowners": [
+    "@robinostlund"
+  ],
+  "requirements": [],
+  "dependencies": [],
+  "config_flow": true,
+  "iot_class": "local_polling",
+  "integration_type": "integration",
+  "domains": [
+    "sensor",
+    "calendar",
+    "binary_sensor"
+  ]
+}

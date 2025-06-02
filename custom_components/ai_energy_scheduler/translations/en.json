@@ -1,0 +1,42 @@
+{
+  "config": {
+    "title": "AI Energy Scheduler",
+    "step": {
+      "user": {
+        "title": "Configure Scheduler",
+        "description": "Paste JSON schedule to import"
+      }
+    },
+    "error": {
+      "invalid_json": "Invalid JSON format",
+      "schema_validation_failed": "Schedule validation failed"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "ai_energy_scheduler_last_update": {
+        "name": "Last Schedule Update",
+        "state": "Last update time"
+      },
+      "ai_energy_scheduler_total_power_kw": {
+        "name": "Total Power (kW)",
+        "state": "Current total power"
+      },
+      "ai_energy_scheduler_total_energy_kwh": {
+        "name": "Total Energy Today (kWh)",
+        "state": "Estimated total energy"
+      }
+    },
+    "binary_sensor": {
+      "ai_energy_scheduler_alert": {
+        "name": "Scheduler Alert",
+        "state": "JSON input failed"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "command_activated": "Command activated"
+    }
+  }
+}

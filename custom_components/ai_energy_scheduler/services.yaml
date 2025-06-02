@@ -1,0 +1,18 @@
+set_schedule:
+  name: Set Schedule
+  description: Submit schedule JSON for devices
+  fields:
+    schedule_data:
+      description: JSON schedule data
+      example: |
+        {
+          "schedules": {
+            "heat_pump": {
+              "intervals": [...]
+            }
+          }
+        }
+
+cleanup_entities:
+  name: Cleanup Entities
+  description: Removes unavailable sensors and stale calendars
