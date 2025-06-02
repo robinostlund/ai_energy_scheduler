@@ -6,22 +6,7 @@
     "binary_sensor",
     "calendar"
   ],
-  "homeassistant": "2025.5.0",
   "zip_release": false,
   "filename": "",
-  "issues": "https://github.com/robinostlund/ai_energy_scheduler/issues",
-  "format": "json",
-  "render_readme": true,
-  "changelog": "",
-  "version": "1.0.1",
-  "slug": "ai_energy_scheduler",
-  "url": "https://github.com/robinostlund/ai_energy_scheduler",
-  "startup": "before_dependencies",
-  "iot_class": "local_push",
-  "architecture": [
-    "auto"
-  ],
-  "requirements": [
-    "jsonschema==4.24.0"
-  ]
+  "issues": "https://github.com/robinostlund/ai_energy_scheduler/issues"
 }
