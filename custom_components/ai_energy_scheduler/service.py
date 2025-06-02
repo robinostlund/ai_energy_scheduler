@@ -24,7 +24,10 @@ async def async_register_services(hass: HomeAssistant, coordinator: AiEnergySche
 
 import json
 import jsonschema
+import logging
 from .validators import SCHEDULE_SCHEMA
+
+_LOGGER = logging.getLogger(__name__)
 
 async def async_validate_schedule_service(hass: HomeAssistant, call: ServiceCall):
     """Service to validate JSON input against the schema."""
