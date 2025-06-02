@@ -1,53 +1,25 @@
-from __future__ import annotations
+"""Binary sensor for AI Energy Scheduler alert."""
 
-import logging
-from typing import Any
+from homeassistant.components.binary_sensor import BinarySensorEntity
+from .const import DOMAIN, BINARY_SENSOR_ALERT
 
-from homeassistant.components.binary_sensor import (
-    BinarySensorEntity,
-    BinarySensorDeviceClass,
-)
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
+async def async_setup_entry(hass, entry, async_add_entities):
+    """Not used: entities created by service."""
+    pass
 
-from .const import DOMAIN
-from .coordinator import AiEnergySchedulerCoordinator
+def create_alert_binary_sensor_for_instance(hass, instance_id, instance_friendly_name, alert_state):
+    return [AiEnergyAlertBinarySensor(instance_id, instance_friendly_name, alert_state)]
 
-_LOGGER = logging.getLogger(__name__)
+class AiEnergyAlertBinarySensor(BinarySensorEntity):
+    """Binary sensor for schedule validation errors."""
 
-
-async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities,
-) -> None:
-    """Set up AI Energy Scheduler binary sensor."""
-    coordinator: AiEnergySchedulerCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
-
-    async_add_entities(
-        [ScheduleAlertBinarySensor(coordinator)],
-        update_before_add=True,
-    )
-
-
-class ScheduleAlertBinarySensor(CoordinatorEntity, BinarySensorEntity):
-    """Binary sensor to indicate if the last JSON input failed."""
-
-    def __init__(self, coordinator: AiEnergySchedulerCoordinator) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator)
-        self._attr_device_class = BinarySensorDeviceClass.PROBLEM
-        self._attr_name = f"{DOMAIN} alert"
-        self._attr_unique_id = f"{DOMAIN}_alert"
+    def __init__(self, instance_id, instance_friendly_name, alert_state):
+        self._instance_id = instance_id
+        self._instance_friendly_name = instance_friendly_name
+        self._attr_name = f"{DOMAIN} {instance_friendly_name} Alert"
+        self._attr_unique_id = f"{DOMAIN}_{instance_id}_{BINARY_SENSOR_ALERT}"
+        self._alert_state = alert_state
 
     @property
-    def is_on(self) -> bool:
-        """Return True if the last schedule load failed or is invalid."""
-        return getattr(self.coordinator, "has_validation_error", False)
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        return {
-            "description": "True if the last schedule could not be processed or is invalid"
-        }
+    def is_on(self):
+        return self._alert_state

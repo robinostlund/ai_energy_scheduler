@@ -1,16 +1,24 @@
 {
-  "schedules": {
-    "heat_pump": {
-      "intervals": [
-        {
-          "start": "2025-06-02T00:00:00+02:00",
-          "end": "2025-06-02T01:00:00+02:00",
-          "command": "off",
-          "power_kw": 0,
-          "energy_kwh": 0,
-          "source": "ai"
+    "schedules": {
+        "heat_pump": {
+            "intervals": [
+                {
+                    "start": "2025-06-02T00:00:00+02:00",
+                    "end": "2025-06-02T01:00:00+02:00",
+                    "command": "heat",
+                    "power_kw": 1.2,
+                    "energy_kwh": 1.2,
+                    "source": "ai"
+                },
+                {
+                    "start": "2025-06-02T01:00:00+02:00",
+                    "end": "2025-06-02T02:00:00+02:00",
+                    "command": "off",
+                    "power_kw": 0,
+                    "energy_kwh": 0,
+                    "source": "manual"
+                }
+            ]
         }
-      ]
     }
-  }
 }

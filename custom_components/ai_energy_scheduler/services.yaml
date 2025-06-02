@@ -1,31 +1,45 @@
+import_schedule:
+  name: Import Schedule
+  description: Import a new schedule for an instance (building/zone).
+  fields:
+    instance_id:
+      description: A unique instance id (e.g. "mainhouse", "garage")
+      example: mainhouse
+    instance_friendly_name:
+      description: Friendly name (e.g. "Main House"). Used for display.
+      example: Main House
+    schedule:
+      description: Schedule as JSON string (must match schema).
+      example: |
+        {
+          "schedules": {
+            "heat_pump": {
+              "intervals": [
+                {
+                  "start": "2025-06-02T00:00:00+02:00",
+                  "end": "2025-06-02T01:00:00+02:00",
+                  "command": "heat",
+                  "power_kw": 1.2,
+                  "energy_kwh": 1.2,
+                  "source": "ai"
+                }
+              ]
+            }
+          }
+        }
+
 validate_schedule:
   name: Validate Schedule
-  description: |
-    Validates the provided JSON schedule structure without applying it.
+  description: Validate the current AI Energy Scheduler JSON for an instance.
   fields:
-    schedule:
-      name: Schedule JSON
-      description: The raw JSON string to validate.
-      required: true
-      example: '{"heat_pump": {"schedule": [{"start": "2025-06-02T00:00:00+02:00", "end": "2025-06-02T01:00:00+02:00", "command": "heat"}]}}'
-      selector:
-        text:
-
-update_schedule:
-  name: Update Schedule
-  description: |
-    Updates the current schedule and devices using the provided JSON data.
-  fields:
-    schedule:
-      name: Schedule JSON
-      description: The raw JSON string defining all devices and their schedules.
-      required: true
-      example: '{"heat_pump": {"schedule": [{"start": "2025-06-02T00:00:00+02:00", "end": "2025-06-02T01:00:00+02:00", "command": "heat"}]}}'
-      selector:
-        text:
+    instance_id:
+      description: Instance id (must match imported schedule)
+      example: mainhouse
 
 cleanup_removed:
   name: Cleanup Removed Devices
-  description: |
-    Removes any sensors and calendars for devices not found in the latest schedule.
-  fields: {}
+  description: Remove entities and calendars for an instance no longer present in the schedule.
+  fields:
+    instance_id:
+      description: Instance id (must match imported schedule)
+      example: mainhouse

@@ -1,102 +1,184 @@
-from __future__ import annotations
-
-import logging
-from datetime import datetime
+"""Sensors for AI Energy Scheduler."""
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-
 from .const import (
-    DOMAIN,
-    SENSOR_COMMAND,
-    SENSOR_POWER_KW,
-    SENSOR_ENERGY_KWH,
-    SENSOR_NEXT_COMMAND,
-    SENSOR_TOTAL_POWER_KW,
-    SENSOR_TOTAL_ENERGY_KWH_TODAY,
+    DOMAIN, SENSOR_COMMAND, SENSOR_POWER_KW, SENSOR_ENERGY_KWH,
+    SENSOR_NEXT_COMMAND, SENSOR_TOTAL_POWER, SENSOR_TOTAL_ENERGY, SENSOR_LAST_UPDATE,
+    CONF_INSTANCE_ID, CONF_INSTANCE_FRIENDLY_NAME, EVENT_COMMAND_ACTIVATED
 )
-from .coordinator import AiEnergySchedulerCoordinator
+import datetime
 
-_LOGGER = logging.getLogger(__name__)
+async def async_setup_entry(hass, entry, async_add_entities):
+    """Set up AI Energy Scheduler sensors for all instances."""
+    # Not used: All entity creation is triggered by the import_schedule service
+    pass
 
+def create_sensors_for_instance(hass, instance_id, instance_friendly_name, schedule):
+    """Return a list of sensor entities for one instance."""
+    sensors = []
+    schedules = schedule.get("schedules", {})
 
-async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
-) -> None:
-    """Set up AI Energy Scheduler sensors."""
-    coordinator: AiEnergySchedulerCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    for device, info in schedules.items():
+        sensors.extend([
+            AiEnergyCommandSensor(hass, instance_id, instance_friendly_name, device, info),
+            AiEnergyPowerKwSensor(hass, instance_id, instance_friendly_name, device, info),
+            AiEnergyEnergyKwhSensor(hass, instance_id, instance_friendly_name, device, info),
+            AiEnergyNextCommandSensor(hass, instance_id, instance_friendly_name, device, info),
+        ])
 
-    entities = []
+    # Add summary sensors (per instance)
+    sensors.append(AiEnergyTotalPowerSensor(hass, instance_id, instance_friendly_name, schedules))
+    sensors.append(AiEnergyTotalEnergySensor(hass, instance_id, instance_friendly_name, schedules))
+    sensors.append(AiEnergyLastUpdateSensor(hass, instance_id, instance_friendly_name, schedules))
+    return sensors
 
-    for device_id, device_data in coordinator.schedule_data.items():
-        entities.append(DeviceSensor(coordinator, device_id, SENSOR_COMMAND))
-        entities.append(DeviceSensor(coordinator, device_id, SENSOR_POWER_KW))
-        entities.append(DeviceSensor(coordinator, device_id, SENSOR_ENERGY_KWH))
-        entities.append(DeviceSensor(coordinator, device_id, SENSOR_NEXT_COMMAND))
+def _get_active_interval(intervals):
+    now = datetime.datetime.now(datetime.timezone.utc)
+    for interval in intervals:
+        start = datetime.datetime.fromisoformat(interval["start"])
+        end = datetime.datetime.fromisoformat(interval["end"])
+        if start <= now < end:
+            return interval
+    return None
 
-    # Global summary sensors
-    entities.append(GlobalSensor(coordinator, SENSOR_TOTAL_POWER_KW))
-    entities.append(GlobalSensor(coordinator, SENSOR_TOTAL_ENERGY_KWH_TODAY))
+class AiEnergyBaseSensor(SensorEntity):
+    """Base class for AI Energy Scheduler sensors."""
 
-    async_add_entities(entities, update_before_add=True)
-
-
-class DeviceSensor(CoordinatorEntity, SensorEntity):
-    """Sensor for individual device state like command, power, energy."""
-
-    def __init__(
-        self,
-        coordinator: AiEnergySchedulerCoordinator,
-        device_id: str,
-        sensor_type: str,
-    ) -> None:
-        super().__init__(coordinator)
-        self.device_id = device_id
-        self.sensor_type = sensor_type
-        self._attr_unique_id = f"{DOMAIN}_{device_id}_{sensor_type}"
-        self._attr_name = f"{device_id} {sensor_type.replace('_', ' ').title()}"
-
-    @property
-    def native_value(self):
-        """Return the current value of the sensor."""
-        data = self.coordinator.get_device_state(self.device_id)
-        return data.get(self.sensor_type)
+    def __init__(self, hass, instance_id, instance_friendly_name, device, info):
+        self._hass = hass
+        self._instance_id = instance_id
+        self._instance_friendly_name = instance_friendly_name
+        self._device = device
+        self._info = info
 
     @property
-    def extra_state_attributes(self):
-        """Return additional attributes."""
-        data = self.coordinator.get_device_state(self.device_id)
+    def device_info(self):
         return {
-            "device": self.device_id,
-            "last_updated": data.get("last_updated"),
-            "source": data.get("source"),
+            "identifiers": {(DOMAIN, self._instance_id)},
+            "name": f"{DOMAIN} {self._instance_friendly_name}"
         }
 
+class AiEnergyCommandSensor(AiEnergyBaseSensor):
+    """Sensor for current command."""
 
-class GlobalSensor(CoordinatorEntity, SensorEntity):
-    """Sensor for global summaries like total power and total energy."""
-
-    def __init__(
-        self,
-        coordinator: AiEnergySchedulerCoordinator,
-        sensor_type: str,
-    ) -> None:
-        super().__init__(coordinator)
-        self.sensor_type = sensor_type
-        self._attr_unique_id = f"{DOMAIN}_global_{sensor_type}"
-        self._attr_name = f"AI Energy Scheduler {sensor_type.replace('_', ' ').title()}"
+    def __init__(self, hass, instance_id, instance_friendly_name, device, info):
+        super().__init__(hass, instance_id, instance_friendly_name, device, info)
+        self._attr_name = f"{DOMAIN} {instance_friendly_name} {device} Command"
+        self._attr_unique_id = f"{DOMAIN}_{instance_id}_{device}_{SENSOR_COMMAND}"
+        self._last_state = None
 
     @property
-    def native_value(self):
-        """Return the current aggregated value."""
-        return self.coordinator.get_global_metric(self.sensor_type)
+    def state(self):
+        intervals = self._info.get("intervals", [])
+        active = _get_active_interval(intervals)
+        new_state = active["command"] if active else None
+        if new_state != self._last_state and new_state is not None:
+            self._hass.bus.async_fire(
+                EVENT_COMMAND_ACTIVATED,
+                {"instance_id": self._instance_id, "device": self._device, "command": new_state}
+            )
+        self._last_state = new_state
+        return new_state
+
+class AiEnergyPowerKwSensor(AiEnergyBaseSensor):
+    """Sensor for current power (kW)."""
+
+    def __init__(self, hass, instance_id, instance_friendly_name, device, info):
+        super().__init__(hass, instance_id, instance_friendly_name, device, info)
+        self._attr_name = f"{DOMAIN} {instance_friendly_name} {device} Power kW"
+        self._attr_unique_id = f"{DOMAIN}_{instance_id}_{device}_{SENSOR_POWER_KW}"
 
     @property
-    def extra_state_attributes(self):
-        """Return meta info."""
-        return {
-            "last_updated": datetime.now().isoformat(),
-            "device_count": len(self.coordinator.schedule_data),
-        }
+    def state(self):
+        intervals = self._info.get("intervals", [])
+        active = _get_active_interval(intervals)
+        return active.get("power_kw") if active else None
+
+class AiEnergyEnergyKwhSensor(AiEnergyBaseSensor):
+    """Sensor for current energy (kWh)."""
+
+    def __init__(self, hass, instance_id, instance_friendly_name, device, info):
+        super().__init__(hass, instance_id, instance_friendly_name, device, info)
+        self._attr_name = f"{DOMAIN} {instance_friendly_name} {device} Energy kWh"
+        self._attr_unique_id = f"{DOMAIN}_{instance_id}_{device}_{SENSOR_ENERGY_KWH}"
+
+    @property
+    def state(self):
+        intervals = self._info.get("intervals", [])
+        active = _get_active_interval(intervals)
+        return active.get("energy_kwh") if active else None
+
+class AiEnergyNextCommandSensor(AiEnergyBaseSensor):
+    """Sensor for next command."""
+
+    def __init__(self, hass, instance_id, instance_friendly_name, device, info):
+        super().__init__(hass, instance_id, instance_friendly_name, device, info)
+        self._attr_name = f"{DOMAIN} {instance_friendly_name} {device} Next Command"
+        self._attr_unique_id = f"{DOMAIN}_{instance_id}_{device}_{SENSOR_NEXT_COMMAND}"
+
+    @property
+    def state(self):
+        now = datetime.datetime.now(datetime.timezone.utc)
+        intervals = self._info.get("intervals", [])
+        future = [i for i in intervals if datetime.datetime.fromisoformat(i["start"]) > now]
+        if not future:
+            return None
+        next_int = min(future, key=lambda x: x["start"])
+        return next_int["command"]
+
+class AiEnergyTotalPowerSensor(SensorEntity):
+    """Sensor for total active power (kW)."""
+
+    def __init__(self, hass, instance_id, instance_friendly_name, schedules):
+        self._hass = hass
+        self._instance_id = instance_id
+        self._instance_friendly_name = instance_friendly_name
+        self._schedules = schedules
+        self._attr_name = f"{DOMAIN} {instance_friendly_name} Total Power kW"
+        self._attr_unique_id = f"{DOMAIN}_{instance_id}_{SENSOR_TOTAL_POWER}"
+
+    @property
+    def state(self):
+        total = 0.0
+        for device, data in self._schedules.items():
+            intervals = data.get("intervals", [])
+            active = _get_active_interval(intervals)
+            if active and "power_kw" in active:
+                total += active["power_kw"]
+        return total if total > 0 else None
+
+class AiEnergyTotalEnergySensor(SensorEntity):
+    """Sensor for total estimated energy (kWh) for today."""
+
+    def __init__(self, hass, instance_id, instance_friendly_name, schedules):
+        self._hass = hass
+        self._instance_id = instance_id
+        self._instance_friendly_name = instance_friendly_name
+        self._schedules = schedules
+        self._attr_name = f"{DOMAIN} {instance_friendly_name} Total Energy kWh Today"
+        self._attr_unique_id = f"{DOMAIN}_{instance_id}_{SENSOR_TOTAL_ENERGY}"
+
+    @property
+    def state(self):
+        today = datetime.datetime.now(datetime.timezone.utc).date()
+        total = 0.0
+        for device, data in self._schedules.items():
+            for interval in data.get("intervals", []):
+                start = datetime.datetime.fromisoformat(interval["start"])
+                if start.date() == today and "energy_kwh" in interval:
+                    total += interval["energy_kwh"]
+        return total if total > 0 else None
+
+class AiEnergyLastUpdateSensor(SensorEntity):
+    """Sensor for last update timestamp."""
+
+    def __init__(self, hass, instance_id, instance_friendly_name, schedules):
+        self._hass = hass
+        self._instance_id = instance_id
+        self._instance_friendly_name = instance_friendly_name
+        self._attr_name = f"{DOMAIN} {instance_friendly_name} Last Update"
+        self._attr_unique_id = f"{DOMAIN}_{instance_id}_{SENSOR_LAST_UPDATE}"
+
+    @property
+    def state(self):
+        return datetime.datetime.now(datetime.timezone.utc).isoformat()

@@ -1,12 +1,8 @@
 {
-  "name": "AI Energy Scheduler",
-  "domain": "ai_energy_scheduler",
-  "documentation": "https://github.com/robinostlund/ai_energy_scheduler",
-  "issue_tracker": "https://github.com/robinostlund/ai_energy_scheduler/issues",
-  "codeowners": [
-    "@robinostlund"
-  ],
-  "requirements": [],
-  "version": "1.0.0",
-  "iot_class": "local_polling"
+    "name": "AI Energy Scheduler",
+    "content_in_root": false,
+    "domain": "ai_energy_scheduler",
+    "country": "SE",
+    "zip_release": false,
+    "render_readme": true
 }

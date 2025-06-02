@@ -1,50 +1,26 @@
-"""Constants for the AI Energy Scheduler integration."""
+"""Constants for AI Energy Scheduler."""
 
 DOMAIN = "ai_energy_scheduler"
+SCHEDULE_FILE_PREFIX = "ai_energy_scheduler_schedule_"
+CONF_INSTANCE_ID = "instance_id"
+CONF_INSTANCE_FRIENDLY_NAME = "instance_friendly_name"
+CONF_JSON = "json"
+CONF_SCHEDULES = "schedules"
 
-# Keys for storing data
-DATA_COORDINATOR = "coordinator"
-
-# Services
-SERVICE_VALIDATE = "validate_schedule"
-SERVICE_UPDATE = "update_schedule"
-SERVICE_CLEANUP = "cleanup_removed"
-
-# File for caching schedule
-SCHEDULE_CACHE_FILENAME = "ai_energy_scheduler_schedule.json"
-
-# Entity naming
+# Entity suffixes
 SENSOR_COMMAND = "command"
 SENSOR_POWER_KW = "power_kw"
 SENSOR_ENERGY_KWH = "energy_kwh"
 SENSOR_NEXT_COMMAND = "next_command"
-SENSOR_TOTAL_POWER_KW = "total_power_kw"
-SENSOR_TOTAL_ENERGY_KWH_TODAY = "total_energy_kwh_today"
-
-# Binary sensor
+SENSOR_TOTAL_POWER = "total_power_kw"
+SENSOR_TOTAL_ENERGY = "total_energy_kwh_today"
+SENSOR_LAST_UPDATE = "last_update"
 BINARY_SENSOR_ALERT = "alert"
+BUTTON_CLEANUP = "cleanup_button"
 
-# Button
-BUTTON_CLEANUP = "cleanup"
-
-# Calendar event
-CALENDAR_EVENT_SUMMARY = "Scheduled Command"
-
-# Attribute keys
-ATTR_COMMAND = "command"
-ATTR_SOURCE = "source"
-ATTR_START = "start"
-ATTR_END = "end"
-ATTR_POWER_KW = "power_kw"
-ATTR_ENERGY_KWH = "energy_kwh"
-ATTR_NEXT_EVENT = "next_event"
-
-# Event
-EVENT_COMMAND_ACTIVATED = "ai_energy_scheduler_command_activated"
-
-# Config flow
-CONF_NAME = "name"
-CONF_JSON_DATA = "json_data"
-
-# Other
-DEFAULT_NAME = "AI Energy Scheduler"
+# Events
+EVENT_COMMAND_ACTIVATED = f"{DOMAIN}_command_activated"
+EVENT_IMPORT_SCHEDULE = f"{DOMAIN}_import_schedule"
+EVENT_VALIDATE_SCHEDULE = f"{DOMAIN}_validate_schedule"
+EVENT_CLEANUP = f"{DOMAIN}_cleanup"
+EVENT_ALERT_CHANGED = f"{DOMAIN}_alert_changed"
