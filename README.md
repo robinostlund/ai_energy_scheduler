@@ -1,3 +1,5 @@
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
+
 # AI Energy Scheduler
 
 [![hassfest](https://github.com/robinostlund/ai_energy_scheduler/actions/workflows/test_integration.yaml/badge.svg)](https://github.com/robinostlund/ai_energy_scheduler/actions/workflows/test_integration.yaml)
@@ -63,3 +65,19 @@ You can trigger this manually via automation or the UI button.
 | `sensor.ai_energy_scheduler_heat_pump_power_kw` | Sensor | Power load for current period |
 | `sensor.ai_energy_scheduler_heat_pump_energy_kwh` | Sensor | Energy use for current period |
 | `calendar.ai_energy_scheduler_heat_pump_schedule` | Calendar | Calendar view of command schedule |
+
+## 🧩 HACS Installation
+
+You can add this custom integration to Home Assistant via [HACS](https://hacs.xyz/) using a custom repository.
+
+### Step-by-step:
+
+1. Go to **HACS → Integrations → ⋮ → Custom repositories**
+2. Paste this GitHub URL:  
+   `https://github.com/robinostlund/ai_energy_scheduler`
+3. Set the category to **Integration**
+4. Click **Add**
+5. Search for **AI Energy Scheduler** in HACS and install
+6. Restart Home Assistant
+
+Make sure `ai_energy_scheduler` appears in your `custom_components/` directory after install.
