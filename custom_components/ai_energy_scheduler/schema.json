@@ -36,6 +36,9 @@
                   "command": {
                     "type": "string"
                   },
+                  "command_override": {
+                    "type": "string"
+                  },
                   "power_kw": {
                     "type": "number"
                   },

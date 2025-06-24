@@ -5,7 +5,8 @@
   "issue_tracker": "https://github.com/robinostlund/ai_energy_scheduler/issues",
   "integration_type": "hub",
   "requirements": [
-    "jsonschema==4.24.0"
+    "jsonschema==4.24.0",
+    "aiofiles"
   ],
   "dependencies": [],
   "codeowners": [

@@ -98,30 +98,8 @@ Anropas när du vill skicka in ett nytt schema.
 ```yaml
 service: ai_energy_scheduler.set_schedule
 data:
-  schedules:
-    heat_pump:
-      intervals:
-        - start: "2025-06-10T00:00:00Z"
-          end: "2025-06-10T06:00:00Z"
-          command: "heat"
-          power_kw: 3.5
-          energy_kwh: 21.0
-          source: "ai"
-        - start: "2025-06-10T06:00:00Z"
-          end: "2025-06-10T22:00:00Z"
-          command: "off"
-        - start: "2025-06-10T22:00:00Z"
-          end: "2025-06-11T00:00:00Z"
-          command: "heat"
-    battery:
-      intervals:
-        - start: "2025-06-10T14:00:00Z"
-          end: "2025-06-10T18:00:00Z"
-          command: "charge"
-          power_kw: 7.0
-          energy_kwh: 28.0
-          source: "ai"
-        - start: "2025-06-10T18:00:00Z"
-          end: "2025-06-11T06:00:00Z"
-          command: "standby"
-
+schedules: >
+   {% set schedule = gpt_response.text %}
+   {% set parsed = schedule | from_json %}
+   {{ parsed }}
+```

@@ -1,0 +1,21 @@
+set_schedule:
+  name: Set Schedule
+  description: |
+    Imports and activates a new AI-based energy schedule. 
+    Accepts JSON input either directly as a dict or as a string (optionally fenced with triple backticks).
+  fields:
+    schedules:
+      required: true
+      description: >
+        The schedule in JSON format. Can be a dictionary or a JSON string. 
+        Must conform to the expected JSON schema.
+      example: >
+        {
+          "heat_pump": [
+            {"from": "2025-06-22T00:00:00+02:00", "to": "2025-06-22T06:00:00+02:00", "command": "off"},
+            {"from": "2025-06-22T06:00:00+02:00", "to": "2025-06-22T22:00:00+02:00", "command": "on"}
+          ]
+        }
+      selector:
+        object:
+
