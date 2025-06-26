@@ -3,7 +3,6 @@
   "content_in_root": false,
   "domains": [
     "sensor",
-    "binary_sensor",
     "calendar"
   ],
   "zip_release": false,
